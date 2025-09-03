@@ -1,0 +1,185 @@
+--// Shinra Hub Free
+
+--// Serviços
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+--// Criando GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ShinraHubFree"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 200, 0, 185) -- altura ajustada
+Frame.Position = UDim2.new(0.05, 0, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromHex("#ac2b31")
+Frame.BackgroundTransparency = 0.3
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- Bordas arredondadas
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 12)
+frameCorner.Parent = Frame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Thickness = 3
+frameStroke.Color = Color3.fromHex("#d31821")
+frameStroke.Parent = Frame
+
+-- Título
+local titulo = Instance.new("TextLabel")
+titulo.Size = UDim2.new(1, 0, 0, 30)
+titulo.BackgroundTransparency = 1
+titulo.Text = "Shinra Hub Free"
+titulo.TextColor3 = Color3.fromRGB(255, 255, 255)
+titulo.Font = Enum.Font.Roboto
+titulo.TextSize = 18
+titulo.Parent = Frame
+
+-- Criador de botões
+local function criarBotao(nome, posY)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -10, 0, 30)
+    button.Position = UDim2.new(0, 5, 0, posY)
+    button.Text = nome
+    button.BackgroundColor3 = Color3.fromHex("#e65c5c")
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Roboto
+    button.TextSize = 14
+    button.Parent = Frame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+
+    return button
+end
+
+-- Botões
+local btnSubir = criarBotao("Subir Chão", 35)
+local btnParar = criarBotao("Parar Chão", 70)
+local btnReset = criarBotao("Resetar Chão", 105)
+local btnPlataforma = criarBotao("Plataforma Seguida", 140)
+
+-- Variáveis
+local chao = nil
+local rodando = false
+local velocidade = 1
+local plataforma = nil
+local seguindo = false
+
+-- Subir chão
+local function subirChao()
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    if not chao then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        local frente = hrp.CFrame.LookVector * 5
+
+        chao = Instance.new("Part")
+        chao.Name = "ChaoVermelho"
+        chao.Size = Vector3.new(20, 1, 20)
+        chao.Anchored = true
+        chao.CFrame = CFrame.new(hrp.Position + frente + Vector3.new(0, -3, 0))
+        chao.Color = Color3.fromHex("#d31821")
+        chao.Parent = workspace
+    end
+
+    rodando = true
+    task.spawn(function()
+        while rodando and chao do
+            chao.Position = chao.Position + Vector3.new(0, velocidade, 0)
+            task.wait(0.05)
+        end
+    end)
+end
+
+-- Parar chão
+local function pararChao()
+    rodando = false
+end
+
+-- Resetar chão
+local function resetChao()
+    rodando = false
+    if chao then
+        chao:Destroy()
+        chao = nil
+    end
+end
+
+-- Plataforma seguida (anda + sobe igual o chão)
+local function plataformaSeguida()
+    if seguindo then
+        seguindo = false
+        if plataforma then
+            plataforma:Destroy()
+            plataforma = nil
+        end
+        return
+    end
+
+    seguindo = true
+    plataforma = Instance.new("Part")
+    plataforma.Name = "PlataformaSeguida"
+    plataforma.Size = Vector3.new(10, 1, 10)
+    plataforma.Anchored = true
+    plataforma.Color = Color3.fromHex("#d31821")
+    plataforma.Parent = workspace
+
+    task.spawn(function()
+        while seguindo and plataforma and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            -- segue o jogador horizontalmente
+            plataforma.Position = Vector3.new(hrp.Position.X, plataforma.Position.Y, hrp.Position.Z) + Vector3.new(0, -3, 0)
+            -- vai subindo devagar (mesma velocidade do chão)
+            plataforma.Position = plataforma.Position + Vector3.new(0, velocidade, 0)
+            task.wait(0.05)
+        end
+    end)
+end
+
+-- Conexões
+btnSubir.MouseButton1Click:Connect(subirChao)
+btnParar.MouseButton1Click:Connect(pararChao)
+btnReset.MouseButton1Click:Connect(resetChao)
+btnPlataforma.MouseButton1Click:Connect(plataformaSeguida)
+
+-- Owner
+local ownerFrame = Instance.new("Frame")
+ownerFrame.Size = UDim2.new(1, -10, 0, 20)
+ownerFrame.Position = UDim2.new(0, 5, 0, 175)
+ownerFrame.BackgroundTransparency = 1
+ownerFrame.Parent = Frame
+
+local ownerLabel = Instance.new("TextLabel")
+ownerLabel.Size = UDim2.new(1, -25, 1, 0)
+ownerLabel.BackgroundTransparency = 1
+ownerLabel.Text = "Owner: shaR1zard"
+ownerLabel.Font = Enum.Font.Roboto
+ownerLabel.TextSize = 14
+ownerLabel.TextXAlignment = Enum.TextXAlignment.Left
+ownerLabel.Parent = ownerFrame
+
+local function rgbEffect(label)
+    task.spawn(function()
+        while true do
+            for i = 0, 360, 5 do
+                local hue = i/360
+                label.TextColor3 = Color3.fromHSV(hue,1,1)
+                task.wait(0.03)
+            end
+        end
+    end)
+end
+rgbEffect(ownerLabel)
+
+local verifiedIcon = Instance.new("ImageLabel")
+verifiedIcon.Size = UDim2.new(0, 16, 0, 16)
+verifiedIcon.Position = UDim2.new(1, -20, 0, 2)
+verifiedIcon.BackgroundTransparency = 1
+verifiedIcon.Image = "rbxassetid://1256485230"
+verifiedIcon.Parent = ownerFrame
